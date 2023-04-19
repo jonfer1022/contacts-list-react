@@ -5,7 +5,6 @@ import { ApolloProvider } from '@apollo/client';
 import './index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Client } from './apollo/Client';
-// import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -15,6 +14,8 @@ root.render(
     </ApolloProvider>
   </React.StrictMode>
 );
+
+// import reportWebVitals from './reportWebVitals';
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
