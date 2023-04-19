@@ -81,7 +81,7 @@ const ContactList = () => {
 
   return (
     <Container fluid>
-      <Row>
+      <Row className="mb-3 mt-3">
         <Col>
           <AiOutlinePlusCircle
             size="2em"
