@@ -5,7 +5,6 @@ import { ApolloProvider } from '@apollo/client';
 import './index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Client } from './apollo/Client';
-
 // import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
