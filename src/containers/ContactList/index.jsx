@@ -1,21 +1,47 @@
 import { useEffect, useRef, useState } from "react";
-import { Container, Row, Col, Table, Spinner, Form } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Table,
+  Spinner,
+  Form,
+  Pagination,
+} from "react-bootstrap";
 import { useGetContacts } from "../../graphql/useQuerys/contacts";
-import { AiOutlineAudit, AiOutlineDelete, AiOutlineForm, AiOutlinePlusCircle } from "react-icons/ai";
-import { ModalCreateContact, ModalDeleteContact, ModalEditContact } from "../../components/Modals";
+import {
+  AiOutlineAudit,
+  AiOutlineDelete,
+  AiOutlineForm,
+  AiOutlinePlusCircle,
+} from "react-icons/ai";
+import {
+  ModalCreateContact,
+  ModalDeleteContact,
+  ModalEditContact,
+} from "../../components/Modals";
 import { useMutation } from "@apollo/client";
-import { ADD_NEW_CONTACT, DELETE_CONTACT, EDIT_CONTACT } from "../../graphql/mutations/contacts";
+import {
+  ADD_NEW_CONTACT,
+  DELETE_CONTACT,
+  EDIT_CONTACT,
+} from "../../graphql/mutations/contacts";
 import "./styles.css";
 
 const ContactList = () => {
+  let itemsPagination = [];
   const isMounted = useRef(false);
+  const [paginationActive, setPaginationActive] = useState(1);
+  const [limitPagination] = useState(10);
+  const [pages, setPages] = useState(1);
+  const [maxContacts, setMaxContacts] = useState(1);
   const [searchContact, setSearchContact] = useState("");
   const [listContacts, setListContacts] = useState([]);
   const [contactSelected, setContactSelected] = useState();
   const [openModalAddContact, setOpenModalAddContact] = useState(false);
   const [openModalDeleteContact, setOpenModalDeleteContact] = useState(false);
   const [openModalEditContact, setOpenModalEditContact] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   const [createContact, { loading: createContactLoading }] =
     useMutation(ADD_NEW_CONTACT);
@@ -27,32 +53,36 @@ const ContactList = () => {
     useMutation(EDIT_CONTACT);
 
   useEffect(() => {
-    const timeOutId = setTimeout(() => setSearchContact(query), 500);
+    const timeOutId = setTimeout(() => {
+      setSearchContact(query);
+      setPages(1);
+      setPaginationActive(1);
+    }, 500);
     return () => clearTimeout(timeOutId);
   }, [query]);
 
   const importContactVcard = async (item) => {
     const response = await fetch(`${process.env.REACT_APP_URL_VCARD}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id: item.id })
+      body: JSON.stringify({ id: item.id }),
     });
 
     const data = await response.text();
-    let blob = new Blob([data], {type: 'text/vcard'});
+    let blob = new Blob([data], { type: "text/vcard" });
     let url = window.URL.createObjectURL(blob);
     let a = document.createElement("a");
     a.href = url;
-    a.download = `${item?.firstName||''}_${item.lastName||''}.vcf`;
+    a.download = `${item?.firstName || ""}_${item.lastName || ""}.vcf`;
     a.click();
-  }
+  };
 
   const {
     data: dataContacts,
     loading: loadingContacts,
-    refetch: refetchContacts
+    refetch: refetchContacts,
   } = useGetContacts(searchContact);
 
   useEffect(() => {
@@ -65,9 +95,10 @@ const ContactList = () => {
   }, [loadingContacts, isMounted.current]);
 
   useEffect(() => {
-    if (dataContacts?.getContacts?.length) {
+    if (dataContacts?.getContacts) {
       const { getContacts } = dataContacts;
-      setListContacts(getContacts);
+      setListContacts(getContacts?.contacts);
+      setMaxContacts(getContacts?.totalContacts);
     }
   }, [dataContacts]);
 
@@ -75,27 +106,54 @@ const ContactList = () => {
     if (isMounted.current) {
       if (!createContactLoading) {
         refetchContacts({
-          search: searchContact
+          search: searchContact,
+          limit: limitPagination,
+          pages: pages
         });
       }
     }
     // eslint-disable-next-line
-  }, [createContactLoading, deleteContactLoading, editContactLoading, searchContact]);
+  }, [
+    createContactLoading,
+    deleteContactLoading,
+    editContactLoading,
+    searchContact,
+  ]);
 
   const createNewContact = (contact) => {
-    createContact({ variables: { ...contact }})
+    createContact({ variables: { ...contact } });
     setOpenModalAddContact(false);
   };
 
   const updateContact = (contact) => {
-    editContact({ variables: { ...contact }})
+    editContact({ variables: { ...contact } });
     setOpenModalEditContact(false);
   };
 
   const removeContact = () => {
-    deleteContact({ variables: { removeContactId: contactSelected?.id }})
+    deleteContact({ variables: { removeContactId: contactSelected?.id } });
     setOpenModalDeleteContact(false);
   };
+
+  for (let i = 1; i <= Math.trunc(maxContacts / limitPagination) + 1; i++) {
+    itemsPagination.push(
+      <Pagination.Item
+        key={`item-pagination-${i}`}
+        active={i === paginationActive}
+        onClick={() => {
+          setPaginationActive(i);
+          setPages(i);
+          refetchContacts({
+            search: searchContact,
+            limit: limitPagination,
+            pages: i
+          })
+        }}
+      >
+        {i}
+      </Pagination.Item>
+    );
+  }
 
   return (
     <Container fluid>
@@ -127,11 +185,14 @@ const ContactList = () => {
                 <th>Phone</th>
                 <th>Email</th>
                 <th>Address</th>
-                <th style={{ width: "5%"}}>Action</th>
+                <th style={{ width: "5%" }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {createContactLoading || loadingContacts || deleteContactLoading || editContactLoading ? (
+              {createContactLoading ||
+              loadingContacts ||
+              deleteContactLoading ||
+              editContactLoading ? (
                 <tr>
                   <td colSpan={6}>
                     <Spinner animation="border" />
@@ -147,17 +208,17 @@ const ContactList = () => {
                     </td>
                     <td>{item?.email || ""}</td>
                     <td>{item?.address || ""}</td>
-                    <td style={{ width: "7%"}}>
+                    <td style={{ width: "7%" }}>
                       <AiOutlineForm
-                        style={{ cursor: "pointer"}}
+                        style={{ cursor: "pointer" }}
                         size="2em"
                         onClick={() => {
                           setOpenModalEditContact(true);
                           setContactSelected(item);
                         }}
                       />
-                      <AiOutlineDelete 
-                        style={{ cursor: "pointer"}}
+                      <AiOutlineDelete
+                        style={{ cursor: "pointer" }}
                         size="2em"
                         onClick={() => {
                           setOpenModalDeleteContact(true);
@@ -181,6 +242,7 @@ const ContactList = () => {
               )}
             </tbody>
           </Table>
+          <Pagination>{itemsPagination}</Pagination>
         </Col>
       </Row>
       <ModalCreateContact

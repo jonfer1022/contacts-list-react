@@ -1,9 +1,9 @@
 import { useQuery } from '@apollo/react-hooks';
 import { GET_CONTACTS } from '../../querys/contacts';
 
-export const useGetContacts = (search) => {
+export const useGetContacts = (search, limit, pages) => {
   return useQuery(GET_CONTACTS, {
-    variables: { search },
+    variables: { search, limit, pages },
     notifyOnNetworkStatusChange: true,
     fetchPolicy: 'network-only'
   });
