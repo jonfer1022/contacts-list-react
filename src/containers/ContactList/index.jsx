@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Container, Row, Col, Table, Spinner, Form } from "react-bootstrap";
 import { useGetContacts } from "../../graphql/useQuerys/contacts";
-import { AiOutlineDelete, AiOutlineForm, AiOutlinePlusCircle } from "react-icons/ai";
+import { AiOutlineAudit, AiOutlineDelete, AiOutlineForm, AiOutlinePlusCircle } from "react-icons/ai";
 import { ModalCreateContact, ModalDeleteContact, ModalEditContact } from "../../components/Modals";
 import { useMutation } from "@apollo/client";
 import { ADD_NEW_CONTACT, DELETE_CONTACT, EDIT_CONTACT } from "../../graphql/mutations/contacts";
@@ -30,6 +30,24 @@ const ContactList = () => {
     const timeOutId = setTimeout(() => setSearchContact(query), 500);
     return () => clearTimeout(timeOutId);
   }, [query]);
+
+  const importContactVcard = async (item) => {
+    const response = await fetch(`${process.env.REACT_APP_URL_VCARD}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id: item.id })
+    });
+
+    const data = await response.text();
+    let blob = new Blob([data], {type: 'text/vcard'});
+    let url = window.URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = `${item?.firstName||''}_${item.lastName||''}.vcf`;
+    a.click();
+  }
 
   const {
     data: dataContacts,
@@ -88,6 +106,7 @@ const ContactList = () => {
             className="addContact"
             onClick={() => setOpenModalAddContact(true)}
           />
+          <span className="ms-2">Add new contact</span>
         </Col>
         <Col>
           <Form.Control
@@ -128,8 +147,9 @@ const ContactList = () => {
                     </td>
                     <td>{item?.email || ""}</td>
                     <td>{item?.address || ""}</td>
-                    <td style={{ width: "5%"}}>
-                      <AiOutlineForm 
+                    <td style={{ width: "7%"}}>
+                      <AiOutlineForm
+                        style={{ cursor: "pointer"}}
                         size="2em"
                         onClick={() => {
                           setOpenModalEditContact(true);
@@ -137,11 +157,17 @@ const ContactList = () => {
                         }}
                       />
                       <AiOutlineDelete 
+                        style={{ cursor: "pointer"}}
                         size="2em"
                         onClick={() => {
                           setOpenModalDeleteContact(true);
                           setContactSelected(item);
                         }}
+                      />
+                      <AiOutlineAudit
+                        style={{ cursor: "pointer" }}
+                        size="2em"
+                        onClick={() => importContactVcard(item)}
                       />
                     </td>
                   </tr>

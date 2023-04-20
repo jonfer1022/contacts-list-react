@@ -38,6 +38,7 @@ jobs:
           npm run deploy
         env:
           REACT_APP_URL: ${{ secrets.REACT_APP_URL }}
+          REACT_APP_URL_VCARD: ${{ secrets.REACT_APP_URL_VCARD }}
           github_token: ${{ secrets.ACCESS_TOKEN_DEPLOY }}
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
